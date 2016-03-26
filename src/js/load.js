@@ -3,6 +3,12 @@ var Game = {
   h: 600
 };
 
+
+if (localStorage.getItem('atPlayer') === null) {
+  localStorage.setItem('atPlayer', rand(0,1000000) );
+}
+
+
 // var w = 800;
 // var h = 600;
 
