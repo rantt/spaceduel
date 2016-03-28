@@ -4,9 +4,14 @@ var Game = {
 };
 
 
-if (localStorage.getItem('atPlayer') === null) {
-  localStorage.setItem('atPlayer', rand(0,1000000) );
+function rand (min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
 }
+
+
+// if (localStorage.getItem('atPlayer') === null) {
+  localStorage.setItem('atPlayer', rand(0,1000000) );
+// }
 
 
 // var w = 800;
@@ -54,6 +59,9 @@ Game.Load.prototype = {
 
     //Load button for twitter
     this.game.load.image('twitter','assets/images/twitter.png');
+
+    this.game.load.image('pbullet', 'assets/images/pbullet.png');
+    this.game.load.image('ebullet', 'assets/images/bullet.png');
 
     // Music Track
     // this.game.load.audio('music','soundtrack.mp3');

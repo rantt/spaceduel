@@ -22,6 +22,10 @@ var score = 0;
 var fireRef;
 var player;
 var actors = {};
+var posUpdateTimer;
+
+var enemyBullets;
+
 
 Game.Play = function(game) {
 	this.game = game;
@@ -31,6 +35,8 @@ Game.Play.prototype = {
 	create: function() {
 		this.game.world.setBounds(0, 0 ,Game.w ,Game.h);
 		this.game.stage.backgroundColor = '#000';
+
+		posUpdateTimer = this.game.time.now;
 
     for (var i = 0;i < 100;i++) {
       var bright = ['#FFF','#dcdcdc','#efefef','#ffff00','#00ff00'];
@@ -42,6 +48,20 @@ Game.Play.prototype = {
 
 
     var fireRef = new Firebase('https://week12.firebaseio.com/');
+
+    //Enemies
+    enemyBullets = game.add.group();
+    enemyBullets.enableBody = true;
+    enemyBullets.physicsBodyType = Phaser.Physics.ARCADE;
+    enemyBullets.createMultiple(100, 'ebullet');
+
+    enemyBullets.setAll('anchor.x', 0.5);
+    enemyBullets.setAll('anchor.y', 0.5);
+    enemyBullets.setAll('outOfBoundsKill', true);
+    enemyBullets.setAll('checkWorldBounds', true);
+    enemyBullets.setAll('tint', '0x00ff00');
+
+
 
 		// // Music
 		// this.music = this.game.add.sound('music');
@@ -68,25 +88,50 @@ Game.Play.prototype = {
 
     player.uid = parseInt(JSON.parse(localStorage.getItem('atPlayer')));
 
+		player.fireRate = 250;
+		player.nextFire = 0;
+		player.health = 20;
+
+		player.bullets = this.game.add.group();
+		player.bullets.enableBody = true;
+		player.bullets.physicsBodyType = Phaser.Physics.ARCADE;
+		player.bullets.createMultiple(30, 'pbullet', 0, false);
+		player.bullets.setAll('anchor.x', 0);
+		player.bullets.setAll('anchor.y', 0.5);
+		player.bullets.setAll('outOfBoundsKill', true);
+		player.bullets.setAll('checkWorldBounds', true);
+
+
 		player.movements = function() {
 			var position = {};
 			// position[this.uid] = {angle: this.angle, x: this.x, y: this.y, color: this.color};
 			position[this.uid] = {angle: this.angle, x: this.x, y: this.y, uid: this.uid};
-			fireRef.set(position);
 
-			if (cursors.left.isDown || aKey.isDown)
+			// console.log(posUpdateTimer);
+			// if (this.game.time.now > posUpdateTimer) {
+			// 	posUpdateTimer = this.game.time.now + 100;
+			// 	fireRef.set(position);
+			// }
+
+			if (cursors.left.isDown || aKey.isDown) {
 				this.angle -= 4.5;
-			else if (cursors.right.isDown || dKey.isDown)
+				fireRef.set(position);
+			}else if (cursors.right.isDown || dKey.isDown){
 				this.angle += 4.5;
+				fireRef.set(position);
+			}
 
-			if (cursors.up.isDown || wKey.isDown)
+			if (cursors.up.isDown || wKey.isDown) {
 					this.currentSpeed = 550;
+					fireRef.set(position);
 					// this.currentSpeed = 150;
-			else if (cursors.down.isDown || sKey.isDown)
+			}else if (cursors.down.isDown || sKey.isDown){
 				this.currentSpeed = 0; //Drift
-			else
-					if (this.currentSpeed > 0)
+			}else {
+					if (this.currentSpeed > 0) {
 							this.currentSpeed -= 12;
+					}
+			}
 
 			if (this.currentSpeed > 0)
 					this.game.physics.arcade.velocityFromRotation(this.rotation, this.currentSpeed, this.body.velocity);
@@ -96,18 +141,24 @@ Game.Play.prototype = {
 					if (this.game.time.now > this.nextFire && this.bullets.countDead() > 0)
 					{
 						// this.shoot_s.play();
-						this.shootSnd.play();
+						// this.shootSnd.play();
 						this.nextFire = this.game.time.now + this.fireRate;
 						var bullet = this.bullets.getFirstExists(false);
 						bullet.reset(this.x, this.y); bullet.rotation = this.game.physics.arcade.moveToPointer(bullet, 2000);
+						fireRef.set({bullet: {x: this.x, y: this.y, rotation: bullet.rotation}});
+						// fireRef.set({x: this.x, y: this.y, rotation: bullet.rotation});
+
 					}
 			}
 
 	};
 
 	fireRef.on('child_changed', function(snapshot) {
+		console.log(snapshot.val());
+
 		var actor = snapshot.val();
-		if (actor.uid !== player.uid) {
+    console.log(actor.uid);
+		if (actor.uid !== player.uid && actor.uid !== undefined) {
 			if (actors[actor.uid] === undefined) {
 				actors[actor.uid] = new Actor(game, actor.x, actor.y,'#FF0000');
 			}else {
@@ -116,6 +167,28 @@ Game.Play.prototype = {
 				actors[actor.uid].angle = actor.angle;	
 			}
 		}
+	});
+
+	fireRef.child('bullet').on('value', function(snapshot) {
+		var shot = snapshot.val();
+		if (shot != null) {
+			console.log(shot);
+			var bullet = enemyBullets.getFirstDead();
+			bullet.reset(shot.x, shot.y); 
+			bullet.rotation = shot.rotation;
+			this.game.physics.arcade.velocityFromRotation(bullet.rotation, 1000, bullet.body.velocity);
+
+			// bullet.body.velocity = 500; 
+
+		}
+
+	// 	// var bullet = enemyBullets.getFirstDead();
+	// 	// bullet.reset(shot.x, shot.y); 
+	// 	// bullet.rotation = shot.rotation;
+  //   //
+	// 	// console.log(bullet.rotation);
+	}, function (errorObject) {
+		console.log("The read failed: " + errorObject.code);
 	});
 
 	//Create Twitter button as invisible, show during win condition to post highscore
@@ -150,9 +223,7 @@ twitter: function() {
 
 // toggleMute: function() {
 //   if (musicOn == true) {
-//     musicOn = false;
-//     this.music.volume = 0;
-//   }else {
+//     musicOn = false; //     this.music.volume = 0; //   }else {
 //     musicOn = true;
 //     this.music.volume = 0.5;
 //   }
