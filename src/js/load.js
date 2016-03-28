@@ -61,7 +61,7 @@ Game.Load.prototype = {
     this.game.load.image('twitter','assets/images/twitter.png');
 
     this.game.load.image('pbullet', 'assets/images/pbullet.png');
-    this.game.load.image('ebullet', 'assets/images/bullet.png');
+    this.game.load.image('ebullet', 'assets/images/ebullet.png');
 
     // Music Track
     // this.game.load.audio('music','soundtrack.mp3');

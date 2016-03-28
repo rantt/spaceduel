@@ -35,6 +35,7 @@ Game.Play.prototype = {
 	create: function() {
 		this.game.world.setBounds(0, 0 ,Game.w ,Game.h);
 		this.game.stage.backgroundColor = '#000';
+		this.stage.disableVisibilityChange = true;
 
 		posUpdateTimer = this.game.time.now;
 
@@ -59,7 +60,8 @@ Game.Play.prototype = {
     enemyBullets.setAll('anchor.y', 0.5);
     enemyBullets.setAll('outOfBoundsKill', true);
     enemyBullets.setAll('checkWorldBounds', true);
-    enemyBullets.setAll('tint', '0x00ff00');
+    // enemyBullets.setAll('tint', '0x00ff00');
+		enemyBullets.setAll('lifespan', 2000);
 
 
 
@@ -147,7 +149,7 @@ Game.Play.prototype = {
 						bullet.rotation = this.rotation;
 						
 						game.physics.arcade.velocityFromRotation(this.rotation, 400, bullet.body.velocity);
-						fireRef.set({bullet: {x: this.x, y: this.y, rotation: bullet.rotation, uid: this.uid}});
+						fireRef.set({bullet: {x: this.x, y: this.y, rotation: bullet.rotation, uid: this.uid, time: this.game.time.now}});
 					}
 			}
 
@@ -171,7 +173,7 @@ Game.Play.prototype = {
 
 	fireRef.child('bullet').on('value', function(snapshot) {
 		var shot = snapshot.val();
-		if (shot != null) {
+		if (shot != null && shot.uid != player.uid) {
 			console.log(shot);
 			var bullet = enemyBullets.getFirstDead();
 			bullet.reset(shot.x, shot.y); 
