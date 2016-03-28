@@ -73,6 +73,7 @@ Game.Play.prototype = {
 		aKey = this.game.input.keyboard.addKey(Phaser.Keyboard.A);
 		sKey = this.game.input.keyboard.addKey(Phaser.Keyboard.S);
 		dKey = this.game.input.keyboard.addKey(Phaser.Keyboard.D);
+		spaceKey = this.game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
 
 		//Accept Arrow Keys as input
 		//capture
@@ -87,6 +88,8 @@ Game.Play.prototype = {
 		player = new Actor(this.game, Game.w/2, Game.h/2, '#0000FF');
 
     player.uid = parseInt(JSON.parse(localStorage.getItem('atPlayer')));
+    player.body.drag.set(100);
+		player.body.maxVelocity.set(500);
 
 		player.fireRate = 250;
 		player.nextFire = 0;
@@ -107,36 +110,30 @@ Game.Play.prototype = {
 			// position[this.uid] = {angle: this.angle, x: this.x, y: this.y, color: this.color};
 			position[this.uid] = {angle: this.angle, x: this.x, y: this.y, uid: this.uid};
 
-			// console.log(posUpdateTimer);
-			// if (this.game.time.now > posUpdateTimer) {
-			// 	posUpdateTimer = this.game.time.now + 100;
-			// 	fireRef.set(position);
-			// }
-
-			if (cursors.left.isDown || aKey.isDown) {
-				this.angle -= 4.5;
+      if(cursors.up.isDown || wKey.isDown) {
+        this.game.physics.arcade.accelerationFromRotation(this.rotation, 200, this.body.acceleration); 
 				fireRef.set(position);
-			}else if (cursors.right.isDown || dKey.isDown){
-				this.angle += 4.5;
-				fireRef.set(position);
-			}
-
-			if (cursors.up.isDown || wKey.isDown) {
-					this.currentSpeed = 550;
+      }else {
+        this.body.acceleration.set(0);
+      }
+		 if (cursors.left.isDown || aKey.isDown)
+			{
+					this.body.angularVelocity = -300;
 					fireRef.set(position);
-					// this.currentSpeed = 150;
-			}else if (cursors.down.isDown || sKey.isDown){
-				this.currentSpeed = 0; //Drift
-			}else {
-					if (this.currentSpeed > 0) {
-							this.currentSpeed -= 12;
-					}
+			}
+			else if (cursors.right.isDown || dKey.isDown)
+			{
+					this.body.angularVelocity = 300;
+					fireRef.set(position);
+			}
+			else
+			{
+					this.body.angularVelocity = 0;
 			}
 
-			if (this.currentSpeed > 0)
-					this.game.physics.arcade.velocityFromRotation(this.rotation, this.currentSpeed, this.body.velocity);
 
-			if (this.game.input.activePointer.isDown && this.alive == true)
+      //Fire Weapons
+			if ((this.game.input.activePointer.isDown || spaceKey.isDown) && this.alive == true)
 			{
 					if (this.game.time.now > this.nextFire && this.bullets.countDead() > 0)
 					{
@@ -144,10 +141,13 @@ Game.Play.prototype = {
 						// this.shootSnd.play();
 						this.nextFire = this.game.time.now + this.fireRate;
 						var bullet = this.bullets.getFirstExists(false);
-						bullet.reset(this.x, this.y); bullet.rotation = this.game.physics.arcade.moveToPointer(bullet, 2000);
-						fireRef.set({bullet: {x: this.x, y: this.y, rotation: bullet.rotation}});
-						// fireRef.set({x: this.x, y: this.y, rotation: bullet.rotation});
-
+						bullet.lifespan = 2000;
+						bullet.reset(this.x, this.y);
+						// bullet.rotation = this.game.physics.arcade.moveToPointer(bullet, 2000);
+						bullet.rotation = this.rotation;
+						
+						game.physics.arcade.velocityFromRotation(this.rotation, 400, bullet.body.velocity);
+						fireRef.set({bullet: {x: this.x, y: this.y, rotation: bullet.rotation, uid: this.uid}});
 					}
 			}
 
