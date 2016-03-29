@@ -90,8 +90,9 @@ Game.Play.prototype = {
 		player = new Actor(this.game, Game.w/2, Game.h/2, '#0000FF');
 
     player.uid = parseInt(JSON.parse(localStorage.getItem('atPlayer')));
-    player.body.drag.set(100);
-		player.body.maxVelocity.set(500);
+
+
+    player.playerHealthBar = this.game.add.sprite(8, 8, this.makeBox(256, 20, '#33ff00'));
 
 		player.fireRate = 250;
 		player.nextFire = 0;
@@ -109,8 +110,7 @@ Game.Play.prototype = {
 
 		player.movements = function() {
 			var position = {};
-			// position[this.uid] = {angle: this.angle, x: this.x, y: this.y, color: this.color};
-			position[this.uid] = {angle: this.angle, x: this.x, y: this.y, uid: this.uid};
+			position[this.uid] = {angle: this.angle, x: this.x, y: this.y, uid: this.uid, health: this.health};
 
       if(cursors.up.isDown || wKey.isDown) {
         this.game.physics.arcade.accelerationFromRotation(this.rotation, 200, this.body.acceleration); 
@@ -133,10 +133,11 @@ Game.Play.prototype = {
 					this.body.angularVelocity = 0;
 			}
 
-
       //Fire Weapons
 			if ((this.game.input.activePointer.isDown || spaceKey.isDown) && this.alive == true)
 			{
+
+          fireRef.set(position);
 					if (this.game.time.now > this.nextFire && this.bullets.countDead() > 0)
 					{
 						// this.shoot_s.play();
@@ -154,12 +155,28 @@ Game.Play.prototype = {
 			}
 
 	};
+  player.damage = function() {
+    this.playerHealthBar.scale.x = this.health/20;
+    this.health -= 1;
+
+    var position = {};
+    position[this.uid] = {angle: this.angle, x: this.x, y: this.y, uid: this.uid, health: this.health};
+
+    if (this.health <= 0) {
+      this.playerHealthBar.scale.x = 0;
+      this.kill();
+      this.alive = false;
+    }
+    fireRef.set(position);
+  };
+
+  actors[player.uid] = player;
 
 	fireRef.on('child_changed', function(snapshot) {
-		console.log(snapshot.val());
+		// console.log(snapshot.val());
 
 		var actor = snapshot.val();
-    console.log(actor.uid);
+    // console.log(actor.uid);
 		if (actor.uid !== player.uid && actor.uid !== undefined) {
 			if (actors[actor.uid] === undefined) {
 				actors[actor.uid] = new Actor(game, actor.x, actor.y,'#FF0000');
@@ -167,31 +184,32 @@ Game.Play.prototype = {
 				actors[actor.uid].x = actor.x;	
 				actors[actor.uid].y = actor.y;	
 				actors[actor.uid].angle = actor.angle;	
+        if (actor.health <= 0) {
+          actors[actor.uid].kill();
+        }
 			}
 		}
+    Object.keys(actors).forEach(function (key) {
+      // console.log(actors[key]);
+      this.game.physics.arcade.overlap(player.bullets, actors[key], this.bulletHitEnemy, null, this);
+    });
+
 	});
 
 	fireRef.child('bullet').on('value', function(snapshot) {
 		var shot = snapshot.val();
 		if (shot != null && shot.uid != player.uid) {
-			console.log(shot);
+			// console.log(shot);
 			var bullet = enemyBullets.getFirstDead();
 			bullet.reset(shot.x, shot.y); 
 			bullet.rotation = shot.rotation;
-			this.game.physics.arcade.velocityFromRotation(bullet.rotation, 1000, bullet.body.velocity);
-
-			// bullet.body.velocity = 500; 
-
+			this.game.physics.arcade.velocityFromRotation(bullet.rotation, 400, bullet.body.velocity);
 		}
-
-	// 	// var bullet = enemyBullets.getFirstDead();
-	// 	// bullet.reset(shot.x, shot.y); 
-	// 	// bullet.rotation = shot.rotation;
-  //   //
-	// 	// console.log(bullet.rotation);
 	}, function (errorObject) {
 		console.log("The read failed: " + errorObject.code);
 	});
+
+
 
 	//Create Twitter button as invisible, show during win condition to post highscore
 	this.twitterButton = this.game.add.button(this.game.world.centerX, this.game.world.centerY + 200,'twitter', this.twitter, this);
@@ -202,8 +220,26 @@ Game.Play.prototype = {
 update: function() {
 	player.movements();
 
+  Object.keys(actors).forEach(function (key) {
+    if (key != player.uid) {
+
+      this.game.physics.arcade.overlap(player.bullets, actors[key], function(actor, bullet) {
+        // actor.kill();
+        bullet.kill();
+      }, null, this);
+    }
+  });
+
+  //Bullet Hit Player
+  this.game.physics.arcade.overlap(enemyBullets, player, this.bulletHitPlayer, null, this);
+
 	// // Toggle Music
 	// muteKey.onDown.add(this.toggleMute, this);
+
+},
+bulletHitPlayer: function(player, bullet) {
+  bullet.kill();
+  player.damage();
 
 },
 makeBox: function(x,y,color) {
@@ -231,7 +267,7 @@ twitter: function() {
 //   }
 // },
 // render: function() {
-//   game.debug.text('Health: ' + tri.health, 32, 96);
+  // game.debug.text('Health: ' + tri.health, 32, 96);
 // }
 
 };
