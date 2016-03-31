@@ -96,7 +96,7 @@ Game.Play.prototype = {
 
 		player.fireRate = 250;
 		player.nextFire = 0;
-		player.health = 20;
+		player.health = 10;
 
 		player.bullets = this.game.add.group();
 		player.bullets.enableBody = true;
@@ -170,7 +170,7 @@ Game.Play.prototype = {
     fireRef.set(position);
   };
 
-  actors[player.uid] = player;
+  // actors[player.uid] = player;
 
 	fireRef.on('child_changed', function(snapshot) {
 		// console.log(snapshot.val());
@@ -184,8 +184,13 @@ Game.Play.prototype = {
 				actors[actor.uid].x = actor.x;	
 				actors[actor.uid].y = actor.y;	
 				actors[actor.uid].angle = actor.angle;	
+        actors[actor.uid].health = actor.health;
         if (actor.health <= 0) {
           actors[actor.uid].kill();
+        }else {
+          if (!actors[actor.uid].alive) {
+            actors[actor.uid].reset(actor.x, actor.y);
+          }
         }
 			}
 		}
@@ -215,23 +220,46 @@ Game.Play.prototype = {
 	this.twitterButton = this.game.add.button(this.game.world.centerX, this.game.world.centerY + 200,'twitter', this.twitter, this);
 	this.twitterButton.anchor.set(0.5);
 	this.twitterButton.visible = false;
+
+
+  this.playAgainText = this.game.add.bitmapText(Game.w + 100, this.game.world.centerY, 'minecraftia','',48);
+
 },
 
 update: function() {
-	player.movements();
 
-  Object.keys(actors).forEach(function (key) {
-    if (key != player.uid) {
+  if (player.alive) {
+    player.movements();
 
-      this.game.physics.arcade.overlap(player.bullets, actors[key], function(actor, bullet) {
-        // actor.kill();
-        bullet.kill();
-      }, null, this);
+    Object.keys(actors).forEach(function (key) {
+      if (key != player.uid) {
+
+        this.game.physics.arcade.overlap(player.bullets, actors[key], function(actor, bullet) {
+          // actor.kill();
+          bullet.kill();
+        }, null, this);
+      }
+    });
+
+    //Bullet Hit Player
+    this.game.physics.arcade.overlap(enemyBullets, player, this.bulletHitPlayer, null, this);
+  }else {
+    this.playAgainText.setText('Play Again?');
+    this.game.time.events.add(Phaser.Timer.SECOND * 1.5, function() { 
+      this.game.add.tween(this.playAgainText).to({x: this.game.world.centerX-300}, 355, Phaser.Easing.Linear.None).start();
+      this.twitterButton.visible = true;
+    }, this);
+      
+    if (this.game.input.activePointer.isDown || wKey.isDown || cursors.up.isDown){
+      // this.enemies.forEach(function(e) {
+      //   e.alive = false;
+      // });
+      // this.music.stop();
+      player.alive = true;
+      player.health = 10;
+      this.game.state.start('Play');
     }
-  });
-
-  //Bullet Hit Player
-  this.game.physics.arcade.overlap(enemyBullets, player, this.bulletHitPlayer, null, this);
+  }
 
 	// // Toggle Music
 	// muteKey.onDown.add(this.toggleMute, this);
