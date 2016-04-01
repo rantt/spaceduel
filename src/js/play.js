@@ -19,7 +19,7 @@ var sKey;
 var dKey;
 var cursors;
 var score = 0;
-var fireRef;
+// var fireRef;
 var player;
 var actors = {};
 var posUpdateTimer;
@@ -48,7 +48,7 @@ Game.Play.prototype = {
     }
 
 
-    var fireRef = new Firebase('https://week12.firebaseio.com/');
+    this.fireRef = new Firebase('https://week12.firebaseio.com/');
 
     //Enemies
     enemyBullets = game.add.group();
@@ -86,11 +86,9 @@ Game.Play.prototype = {
 				Phaser.Keyboard.DOWN
 		]);
 
-		// player = this.game.add.sprite(Game.w/2, Game.h/2, this.makeCone(32, '#FFF'));
 		player = new Actor(this.game, Game.w/2, Game.h/2, '#0000FF');
 
     player.uid = parseInt(JSON.parse(localStorage.getItem('atPlayer')));
-
 
     player.playerHealthBar = this.game.add.sprite(8, 8, this.makeBox(256, 20, '#33ff00'));
 
@@ -108,14 +106,17 @@ Game.Play.prototype = {
 		player.bullets.setAll('checkWorldBounds', true);
 
 
-		player.movements = function() {
-			var position = {};
-			position[this.uid] = {angle: this.angle, x: this.x, y: this.y, uid: this.uid, health: this.health};
+		player.movements = function(that) {
+
+      var playr = {};
+      playr['player'] = {};
+			var position = {angle: this.angle, x: this.x, y: this.y, health: this.health};
+      playr['player'][this.uid] = position;
 
       if(cursors.up.isDown || wKey.isDown) {
         // this.game.physics.arcade.accelerationFromRotation(this.rotation, 200, this.body.acceleration); 
         this.currentSpeed = 300;
-				fireRef.set(position);
+				that.fireRef.set(playr);
       }else {
         // this.body.acceleration.set(0);
         this.currentSpeed = 0;
@@ -123,29 +124,25 @@ Game.Play.prototype = {
 		 if (cursors.left.isDown || aKey.isDown)
 			{
 					this.body.angularVelocity = -300;
-					fireRef.set(position);
+					that.fireRef.set(playr);
 			}
 			else if (cursors.right.isDown || dKey.isDown)
 			{
 					this.body.angularVelocity = 300;
-					fireRef.set(position);
+					that.fireRef.set(playr);
 			}
 			else
 			{
 					this.body.angularVelocity = 0;
 			}
 
-      // if (this.currentSpeed > 0) {
         this.game.physics.arcade.velocityFromRotation(this.rotation, this.currentSpeed, this.body.velocity);
-      // }else {
-      //   this.game.physics.arcade.velocityFromRotation(this.rotation, this.currentSpeed, this.body.velocity);
-      // }
 
       //Fire Weapons
 			if ((this.game.input.activePointer.isDown || spaceKey.isDown) && this.alive == true)
 			{
 
-          fireRef.set(position);
+          that.fireRef.set(playr);
 					if (this.game.time.now > this.nextFire && this.bullets.countDead() > 0)
 					{
 						// this.shoot_s.play();
@@ -158,55 +155,69 @@ Game.Play.prototype = {
 						bullet.rotation = this.rotation;
 						
 						game.physics.arcade.velocityFromRotation(this.rotation, 400, bullet.body.velocity);
-						fireRef.set({bullet: {x: this.x, y: this.y, rotation: bullet.rotation, uid: this.uid, time: this.game.time.now}});
+						that.fireRef.set({bullet: {x: this.x, y: this.y, rotation: bullet.rotation, uid: this.uid, time: this.game.time.now}});
 					}
 			}
 
 	};
-  player.damage = function(){
-    this.playerHealthBar.scale.x = this.health/20;
+  player.damage = function(that){
+    this.playerHealthBar.scale.x = this.health/10;
     this.health -= 1;
+    console.log('hit');
 
-    var position = {};
-    position[this.uid] = {angle: this.angle, x: this.x, y: this.y, uid: this.uid, health: this.health};
+    var playr = {};
+    playr['player'] = {};
+    var position = {angle: this.angle, x: this.x, y: this.y, health: this.health};
+    playr['player'][this.uid] = position;
 
     if (this.health <= 0) {
       this.playerHealthBar.scale.x = 0;
       this.kill();
-      this.alive = false;
     }
-    fireRef.set(position);
+    that.fireRef.set(playr);
   };
 
   actors[player.uid] = player;
 
-	fireRef.on('child_changed', function(snapshot) {
+	// this.fireRef.on('child_changed', function(snapshot) {
+	this.fireRef.child('player').on('value', function(snapshot) {
 		// console.log(snapshot.val());
 
-		var actor = snapshot.val();
-    // console.log(actor.uid);
-		if (actor.uid !== player.uid && actor.uid !== undefined) {
-			if (actors[actor.uid] === undefined) {
-				actors[actor.uid] = new Actor(game, actor.x, actor.y,'#FF0000');
-      }else {
-        console.log(actor);
-				actors[actor.uid].x = actor.x;	
-				actors[actor.uid].y = actor.y;	
-				actors[actor.uid].angle = actor.angle;	
-        actors[actor.uid].health = parseInt(actor.health);
-        console.log(actors[actor.uid].alive);
-        if (actors[actor.uid].health <= 0) {
-          actors[actor.uid].kill();
+		// var actors = snapshot.val();
+    snapshot.forEach(function(childSnapshot) {
+      var uid = childSnapshot.key();
+      var actor = childSnapshot.val();
+      // console.log(data);
+      // console.log(uid, player.uid);
+
+      // if (actor.uid !== player.uid && actor.uid !== undefined) {
+      if (uid != player.uid) {
+        console.log(uid, player.uid);
+        if (actors[uid] === undefined) {
+        console.log(actors[uid],'test');
+          actors[uid] = new Actor(game, actor.x, actor.y,'#FF0000');
+          actors[uid].health = 10; 
+        }else {
+          // console.log(actor);
+          actors[uid].x = actor.x;	
+          actors[uid].y = actor.y;	
+          actors[uid].angle = actor.angle;	
+          actors[uid].health = actor.health;
+          console.log(actors[uid], actor.health);
+
+          if (actors[uid].health <= 0) {
+            actors[uid].kill();
+            actors[uid] = undefined;
+          }
         }
-			}
-		}
-    // Object.keys(actors).forEach(function (key) {
-    //   this.game.physics.arcade.overlap(player.bullets, actors[key], this.bulletHitEnemy, null, this);
-    // });
+      }
+
+    });
+    // console.log(actor);
 
 	});
 
-	fireRef.child('bullet').on('value', function(snapshot) {
+	this.fireRef.child('bullet').on('value', function(snapshot) {
 		var shot = snapshot.val();
 		if (shot !== null && shot.uid !== player.uid) {
 			// console.log(shot);
@@ -236,7 +247,7 @@ update: function() {
   var that = this;
 
   if (player.alive) {
-    player.movements();
+    player.movements(this);
 
     Object.keys(actors).forEach(function (key) {
       if (key != player.uid) {
@@ -247,8 +258,12 @@ update: function() {
       }
     });
 
-    //Bullet Hit Player
-    this.game.physics.arcade.overlap(enemyBullets, player, this.bulletHitPlayer, null, this);
+      //Bullet Hit Player
+    this.game.physics.arcade.overlap(enemyBullets, player,function(player, bullet) {
+      bullet.kill();
+      player.damage(that);
+    }, null, this);
+
   }else {
     this.playAgainText.setText('Play Again?');
     this.game.time.events.add(Phaser.Timer.SECOND * 1.5, function() { 
@@ -258,12 +273,15 @@ update: function() {
     }, this);
       
     if (this.game.input.activePointer.isDown || wKey.isDown || cursors.up.isDown){
-      player.health = 10;
-      this.playAgainText.setText('');
-      this.twitterButton.visible = false;
+      that.playAgainText.setText('');
+      that.twitterButton.visible = false;
 
       player.reset(Game.w/2, Game.h/2);
-      player.alive = true;
+      player.health = 10;
+      player.playerHealthBar.scale.x = 1;
+
+      console.log(player.health);
+      // player.alive = true;
 
     }
   }
@@ -272,11 +290,11 @@ update: function() {
 	// muteKey.onDown.add(this.toggleMute, this);
 
 },
-bulletHitPlayer: function(player, bullet) {
-  bullet.kill();
-  player.damage();
-
-},
+// bulletHitPlayer: function(player, bullet) {
+//   bullet.kill();
+//   player.damage();
+//
+// },
 makeBox: function(x,y,color) {
 	var bmd = this.game.add.bitmapData(x, y);
 	bmd.ctx.beginPath();
