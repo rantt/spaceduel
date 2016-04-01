@@ -41,7 +41,7 @@ Game.Play.prototype = {
 
     for (var i = 0;i < 100;i++) {
       var bright = ['#FFF','#dcdcdc','#efefef','#ffff00','#00ff00'];
-      var sizes = [1,1,1,1,1,2,2,2,3,3,3,4,4,5,6,7,8]
+      var sizes = [1,1,1,1,1,2,2,2,3,3,3,4,4,5,6,7,8];
       var starSize = sizes[rand(0,16)];
 
       this.game.add.sprite(rand(0,Game.w),rand(0,Game.h),this.makeBox(starSize, starSize, bright[rand(0,2)]));
@@ -113,10 +113,12 @@ Game.Play.prototype = {
 			position[this.uid] = {angle: this.angle, x: this.x, y: this.y, uid: this.uid, health: this.health};
 
       if(cursors.up.isDown || wKey.isDown) {
-        this.game.physics.arcade.accelerationFromRotation(this.rotation, 200, this.body.acceleration); 
+        // this.game.physics.arcade.accelerationFromRotation(this.rotation, 200, this.body.acceleration); 
+        this.currentSpeed = 300;
 				fireRef.set(position);
       }else {
-        this.body.acceleration.set(0);
+        // this.body.acceleration.set(0);
+        this.currentSpeed = 0;
       }
 		 if (cursors.left.isDown || aKey.isDown)
 			{
@@ -132,6 +134,12 @@ Game.Play.prototype = {
 			{
 					this.body.angularVelocity = 0;
 			}
+
+      // if (this.currentSpeed > 0) {
+        this.game.physics.arcade.velocityFromRotation(this.rotation, this.currentSpeed, this.body.velocity);
+      // }else {
+      //   this.game.physics.arcade.velocityFromRotation(this.rotation, this.currentSpeed, this.body.velocity);
+      // }
 
       //Fire Weapons
 			if ((this.game.input.activePointer.isDown || spaceKey.isDown) && this.alive == true)
@@ -155,7 +163,7 @@ Game.Play.prototype = {
 			}
 
 	};
-  player.damage = function() {
+  player.damage = function(){
     this.playerHealthBar.scale.x = this.health/20;
     this.health -= 1;
 
@@ -170,7 +178,7 @@ Game.Play.prototype = {
     fireRef.set(position);
   };
 
-  // actors[player.uid] = player;
+  actors[player.uid] = player;
 
 	fireRef.on('child_changed', function(snapshot) {
 		// console.log(snapshot.val());
@@ -180,30 +188,27 @@ Game.Play.prototype = {
 		if (actor.uid !== player.uid && actor.uid !== undefined) {
 			if (actors[actor.uid] === undefined) {
 				actors[actor.uid] = new Actor(game, actor.x, actor.y,'#FF0000');
-			}else {
+      }else {
+        console.log(actor);
 				actors[actor.uid].x = actor.x;	
 				actors[actor.uid].y = actor.y;	
 				actors[actor.uid].angle = actor.angle;	
-        actors[actor.uid].health = actor.health;
-        if (actor.health <= 0) {
+        actors[actor.uid].health = parseInt(actor.health);
+        console.log(actors[actor.uid].alive);
+        if (actors[actor.uid].health <= 0) {
           actors[actor.uid].kill();
-        }else {
-          if (!actors[actor.uid].alive) {
-            actors[actor.uid].reset(actor.x, actor.y);
-          }
         }
 			}
 		}
-    Object.keys(actors).forEach(function (key) {
-      // console.log(actors[key]);
-      this.game.physics.arcade.overlap(player.bullets, actors[key], this.bulletHitEnemy, null, this);
-    });
+    // Object.keys(actors).forEach(function (key) {
+    //   this.game.physics.arcade.overlap(player.bullets, actors[key], this.bulletHitEnemy, null, this);
+    // });
 
 	});
 
 	fireRef.child('bullet').on('value', function(snapshot) {
 		var shot = snapshot.val();
-		if (shot != null && shot.uid != player.uid) {
+		if (shot !== null && shot.uid !== player.uid) {
 			// console.log(shot);
 			var bullet = enemyBullets.getFirstDead();
 			bullet.reset(shot.x, shot.y); 
@@ -228,6 +233,8 @@ Game.Play.prototype = {
 
 update: function() {
 
+  var that = this;
+
   if (player.alive) {
     player.movements();
 
@@ -235,7 +242,6 @@ update: function() {
       if (key != player.uid) {
 
         this.game.physics.arcade.overlap(player.bullets, actors[key], function(actor, bullet) {
-          // actor.kill();
           bullet.kill();
         }, null, this);
       }
@@ -248,16 +254,17 @@ update: function() {
     this.game.time.events.add(Phaser.Timer.SECOND * 1.5, function() { 
       this.game.add.tween(this.playAgainText).to({x: this.game.world.centerX-300}, 355, Phaser.Easing.Linear.None).start();
       this.twitterButton.visible = true;
+
     }, this);
       
     if (this.game.input.activePointer.isDown || wKey.isDown || cursors.up.isDown){
-      // this.enemies.forEach(function(e) {
-      //   e.alive = false;
-      // });
-      // this.music.stop();
-      player.alive = true;
       player.health = 10;
-      this.game.state.start('Play');
+      this.playAgainText.setText('');
+      this.twitterButton.visible = false;
+
+      player.reset(Game.w/2, Game.h/2);
+      player.alive = true;
+
     }
   }
 

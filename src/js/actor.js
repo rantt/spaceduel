@@ -22,10 +22,10 @@ var Actor = function(game, x, y, color) {
   this.anchor.setTo(0.5);
   this.passengers = 0;
   this.game.physics.enable(this, Phaser.Physics.ARCADE);
-  this.body.drag.set(0.5);
+  // this.body.drag.set(0.5);
   // this.body.maxVelocity.setTo(800, 800);
 
-  this.body.drag.set(100);
+  // this.body.drag.set(100);
   this.body.maxVelocity.set(500);
 
   this.body.collideWorldBounds = true;
