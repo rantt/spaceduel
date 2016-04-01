@@ -37,6 +37,8 @@ Game.Play.prototype = {
 		this.game.stage.backgroundColor = '#000';
 		this.stage.disableVisibilityChange = true;
 
+    this.deathTimer = this.game.time.now;
+
 		posUpdateTimer = this.game.time.now;
 
     for (var i = 0;i < 100;i++) {
@@ -89,8 +91,6 @@ Game.Play.prototype = {
 		player = new Actor(this.game, Game.w/2, Game.h/2, '#0000FF');
 
     player.uid = parseInt(JSON.parse(localStorage.getItem('atPlayer')));
-
-    player.playerHealthBar = this.game.add.sprite(8, 8, this.makeBox(256, 20, '#33ff00'));
 
 		player.fireRate = 250;
 		player.nextFire = 0;
@@ -165,7 +165,6 @@ Game.Play.prototype = {
 
 	};
   player.damage = function(that){
-    this.playerHealthBar.scale.x = this.health/10;
     this.health -= 1;
 
     var playr = {};
@@ -175,10 +174,8 @@ Game.Play.prototype = {
 
     // var position = {};
     // position[this.uid] = {angle: this.angle, x: this.x, y: this.y, uid: this.uid, health: this.health};
-    // console.log(position);
 
     if (this.health <= 0) {
-      this.playerHealthBar.scale.x = 0;
       this.kill();
     }
     that.fireRef.set(playr);
@@ -188,14 +185,11 @@ Game.Play.prototype = {
 
 	// this.fireRef.on('child_changed', function(snapshot) {
 	this.fireRef.child('player').on('value', function(snapshot) {
-		// console.log(snapshot.val());
 
 		// var actors = snapshot.val();
     snapshot.forEach(function(childSnapshot) {
       var uid = childSnapshot.key();
       var actor = childSnapshot.val();
-      // console.log(data);
-      // console.log(uid, player.uid);
 
       // if (actor.uid !== player.uid && actor.uid !== undefined) {
       if (uid != player.uid) {
@@ -203,13 +197,11 @@ Game.Play.prototype = {
           actors[uid] = new Actor(game, actor.x, actor.y,'#FF0000');
           actors[uid].health = 10; 
         }else {
-          // console.log(actor);
           actors[uid].x = actor.x;	
           actors[uid].y = actor.y;	
           actors[uid].angle = actor.angle;	
           actors[uid].health = actor.health;
 
-          console.log(actors[uid], actor.health);
           if (actors[uid].health <= 0) {
             actors[uid].kill();
           }
@@ -228,7 +220,6 @@ Game.Play.prototype = {
 	this.fireRef.child('bullet').on('value', function(snapshot) {
 		var shot = snapshot.val();
 		if (shot !== null && shot.uid !== player.uid) {
-			// console.log(shot);
 			var bullet = enemyBullets.getFirstDead();
 			bullet.reset(shot.x, shot.y); 
 			bullet.rotation = shot.rotation;
@@ -285,14 +276,16 @@ update: function() {
       var playr = {};
       playr['player'] = {};
       playr['player'][player.uid] = {angle: player.angle, x: player.x, y: player.y, health: 0};
-      that.fireRef.set(playr);
+
+      if (this.game.time.now > this.deathTimer) {
+        that.fireRef.set(playr);
+        this.deathTimer = this.game.time.now + 500;
+      }
       
     if (this.game.input.activePointer.isDown || wKey.isDown || cursors.up.isDown){
 
       player.reset(Game.w/2, Game.h/2);
       player.health = 10;
-      player.playerHealthBar.scale.x = 1;
-      console.log(player.health);
       that.playAgainText.setText('');
       // player.alive = true;
       playr['player'][player.uid] = {angle: player.angle, x: player.x, y: player.y, health: 0, reset: true};
@@ -335,7 +328,6 @@ twitter: function() {
 //   }
 // },
 // render: function() {
-  // game.debug.text('Health: ' + tri.health, 32, 96);
 // }
 
 };

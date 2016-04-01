@@ -18,6 +18,10 @@ var Actor = function(game, x, y, color) {
 
   Phaser.Sprite.call(this, game, x, y, bmd); 
 
+  this.healthBar = this.game.add.sprite(this.x, this.y-52, this.makeBox(80, 7, '#00ff00'));
+  this.healthBar.anchor.setTo(0.5);
+  
+
     // this.player = this.game.add.sprite(Game.w/2, Game.h/2, 'tri');
   this.anchor.setTo(0.5);
   this.passengers = 0;
@@ -65,4 +69,17 @@ var Actor = function(game, x, y, color) {
 
 
 Actor.prototype = Object.create(Phaser.Sprite.prototype);
+Actor.prototype.makeBox = function(x, y, color) {
+  var bmd = this.game.add.bitmapData(x, y);
+  bmd.ctx.beginPath();
+  bmd.ctx.rect(0, 0, x, y);
+  bmd.ctx.fillStyle = color;
+  bmd.ctx.fill();
+  return bmd;
+};
+Actor.prototype.update = function() {
+  this.healthBar.x = this.x;
+  this.healthBar.y = this.y -52;
+  this.healthBar.scale.x = this.health/10;
+};
 Actor.prototype.constructor = Actor;
