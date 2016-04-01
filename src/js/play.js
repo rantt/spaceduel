@@ -136,7 +136,11 @@ Game.Play.prototype = {
 					this.body.angularVelocity = 0;
 			}
 
+      // if (this.currentSpeed > 0) {
         this.game.physics.arcade.velocityFromRotation(this.rotation, this.currentSpeed, this.body.velocity);
+      // }else {
+      //   this.game.physics.arcade.velocityFromRotation(this.rotation, this.currentSpeed, this.body.velocity);
+      // }
 
       //Fire Weapons
 			if ((this.game.input.activePointer.isDown || spaceKey.isDown) && this.alive == true)
@@ -163,12 +167,15 @@ Game.Play.prototype = {
   player.damage = function(that){
     this.playerHealthBar.scale.x = this.health/10;
     this.health -= 1;
-    console.log('hit');
 
     var playr = {};
     playr['player'] = {};
     var position = {angle: this.angle, x: this.x, y: this.y, health: this.health};
     playr['player'][this.uid] = position;
+
+    // var position = {};
+    // position[this.uid] = {angle: this.angle, x: this.x, y: this.y, uid: this.uid, health: this.health};
+    // console.log(position);
 
     if (this.health <= 0) {
       this.playerHealthBar.scale.x = 0;
@@ -192,9 +199,7 @@ Game.Play.prototype = {
 
       // if (actor.uid !== player.uid && actor.uid !== undefined) {
       if (uid != player.uid) {
-        console.log(uid, player.uid);
         if (actors[uid] === undefined) {
-        console.log(actors[uid],'test');
           actors[uid] = new Actor(game, actor.x, actor.y,'#FF0000');
           actors[uid].health = 10; 
         }else {
@@ -203,11 +208,14 @@ Game.Play.prototype = {
           actors[uid].y = actor.y;	
           actors[uid].angle = actor.angle;	
           actors[uid].health = actor.health;
-          console.log(actors[uid], actor.health);
 
+          console.log(actors[uid], actor.health);
           if (actors[uid].health <= 0) {
             actors[uid].kill();
-            actors[uid] = undefined;
+          }
+
+          if (actor.reset == true) {
+            actors[uid].reset(Game.w/2, Game.h/2);
           }
         }
       }
@@ -247,6 +255,8 @@ update: function() {
   var that = this;
 
   if (player.alive) {
+    this.twitterButton.visible = false;
+
     player.movements(this);
 
     Object.keys(actors).forEach(function (key) {
@@ -258,11 +268,11 @@ update: function() {
       }
     });
 
-      //Bullet Hit Player
-    this.game.physics.arcade.overlap(enemyBullets, player,function(player, bullet) {
-      bullet.kill();
-      player.damage(that);
-    }, null, this);
+    //Bullet Hit Player
+  this.game.physics.arcade.overlap(enemyBullets, player,function(player, bullet) {
+    bullet.kill();
+    player.damage(that);
+  }, null, this);
 
   }else {
     this.playAgainText.setText('Play Again?');
@@ -271,17 +281,22 @@ update: function() {
       this.twitterButton.visible = true;
 
     }, this);
+
+      var playr = {};
+      playr['player'] = {};
+      playr['player'][player.uid] = {angle: player.angle, x: player.x, y: player.y, health: 0};
+      that.fireRef.set(playr);
       
     if (this.game.input.activePointer.isDown || wKey.isDown || cursors.up.isDown){
-      that.playAgainText.setText('');
-      that.twitterButton.visible = false;
 
       player.reset(Game.w/2, Game.h/2);
       player.health = 10;
       player.playerHealthBar.scale.x = 1;
-
       console.log(player.health);
+      that.playAgainText.setText('');
       // player.alive = true;
+      playr['player'][player.uid] = {angle: player.angle, x: player.x, y: player.y, health: 0, reset: true};
+      that.fireRef.set(playr);
 
     }
   }
