@@ -128,9 +128,9 @@ Game.Play.prototype = {
 		player.movements = function(that) {
 
       var playr = {};
-      playr['player'] = {};
+      playr.player = {};
 			var position = {angle: this.angle, x: this.x, y: this.y, health: this.health};
-      playr['player'][this.uid] = position;
+      playr.player[this.uid] = position;
 
       if(cursors.up.isDown || wKey.isDown) {
         // this.game.physics.arcade.accelerationFromRotation(this.rotation, 200, this.body.acceleration); 
@@ -188,9 +188,9 @@ Game.Play.prototype = {
     this.health -= 1;
 
     var playr = {};
-    playr['player'] = {};
+    playr.player = {};
     var position = {angle: this.angle, x: this.x, y: this.y, health: this.health};
-    playr['player'][this.uid] = position;
+    playr.player[this.uid] = position;
 
     // var position = {};
     // position[this.uid] = {angle: this.angle, x: this.x, y: this.y, uid: this.uid, health: this.health};
@@ -305,8 +305,8 @@ update: function() {
     }, this);
 
       var playr = {};
-      playr['player'] = {};
-      playr['player'][player.uid] = {angle: player.angle, x: player.x, y: player.y, health: 0};
+      playr.player = {};
+      playr.player[player.uid] = {angle: player.angle, x: player.x, y: player.y, health: 0};
 
       if (this.game.time.now > this.deathTimer) {
         that.fireRef.set(playr);
@@ -319,7 +319,7 @@ update: function() {
       player.health = 10;
       that.playAgainText.setText('');
       // player.alive = true;
-      playr['player'][player.uid] = {angle: player.angle, x: player.x, y: player.y, health: 0, reset: true};
+      playr.player[player.uid] = {angle: player.angle, x: player.x, y: player.y, health: 0, reset: true};
       that.fireRef.set(playr);
 
     }
@@ -344,11 +344,11 @@ makeBox: function(x,y,color) {
 },
 twitter: function() {
 	//Popup twitter window to post highscore
-	var game_url = 'http://www.divideby5.com/games/GAMETITLE/'; 
+	var game_url = 'http://www.divideby5.com/games/spaceduel/'; 
 	var twitter_name = 'rantt_';
-	var tags = ['1GAM'];
+	var tags = [''];
 
-	window.open('http://twitter.com/share?text=My+best+score+is+'+score+'+playing+GAME+TITLE+See+if+you+can+beat+it.+at&via='+twitter_name+'&url='+game_url+'&hashtags='+tags.join(','), '_blank');
+	window.open('http://twitter.com/share?text=Come+join+the+multiplayer+mayhem.+at&via='+twitter_name+'&url='+game_url+'&hashtags='+tags.join(','), '_blank');
 },
 
 // toggleMute: function() {
