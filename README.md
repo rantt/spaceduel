@@ -6,6 +6,13 @@ Simplye multiplayer space shooter
 
 You can play the game [here](http://divideby5.com/games/spaceduel).
 
+#Instuctions
+To load this on your own system you'll need a firebase.com account and a link to a app.
+Replace line play.js:56 `this.fireRef = new Firebase(<PUT FIREBASE.COM REFERENCE HERE>);`
+with your firebase app reference.
+    
+
+
 ##Tools
 Developed using [Phaser.js](http://phaser.io)
 

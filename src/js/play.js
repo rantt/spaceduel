@@ -54,16 +54,7 @@ Game.Play.prototype = {
 
     this.deathTimer = this.game.time.now;
 
-    // for (var i = 0;i < 100;i++) {
-    //   var bright = ['#FFF','#dcdcdc','#efefef','#ffff00','#00ff00'];
-    //   var sizes = [1,1,1,1,1,2,2,2,3,3,3,4,4,5,6,7,8];
-    //   var starSize = sizes[rand(0,16)];
-    //
-    //   this.game.add.sprite(rand(0,Game.w),rand(0,Game.h),this.makeBox(starSize, starSize, bright[rand(0,2)]));
-    // }
-
-
-    this.fireRef = new Firebase('https://week12.firebaseio.com/');
+    this.fireRef = new Firebase(<PUT FIREBASE.COM REFERENCE HERE>);
 
     //Enemies
     enemyBullets = game.add.group();
