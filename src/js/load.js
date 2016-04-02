@@ -1,6 +1,6 @@
 var Game = {
-  w: 800,
-  h: 600
+  w: 1600,
+  h: 1200 
 };
 
 
@@ -8,10 +8,9 @@ function rand (min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-
-// if (localStorage.getItem('atPlayer') === null) {
+if (localStorage.getItem('atPlayer') === null) {
   localStorage.setItem('atPlayer', rand(0,1000000) );
-// }
+}
 
 
 // var w = 800;
@@ -30,11 +29,10 @@ Game.Boot.prototype = {
 		this.game.load.image('instructions', 'assets/images/instructions.png');
     this.game.load.bitmapFont('minecraftia', 'assets/fonts/font.png', 'assets/fonts/font.xml'); //load default font
 
-
-    // //Scale Image to Fit Window
-    // this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
-    // this.game.scale.maxHeight = window.innerHeight;
-    // this.game.scale.maxWidth = window.innerHeight*(Game.w/Game.h);
+    //Scale Image to Fit Window
+    this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
+    this.game.scale.maxHeight = window.innerHeight;
+    this.game.scale.maxWidth = window.innerHeight*(Game.w/Game.h);
 
   },
   create: function() {
@@ -62,6 +60,12 @@ Game.Load.prototype = {
 
     this.game.load.image('pbullet', 'assets/images/pbullet.png');
     this.game.load.image('ebullet', 'assets/images/ebullet.png');
+
+    this.game.load.image('background', 'assets/images/background.png');
+
+    this.game.load.audio('shot', 'assets/audio/fw2_energygun.wav');
+    this.game.load.audio('explosion', 'assets/audio/explosion.wav');
+    this.game.load.audio('oscillation', 'assets/audio/oscillation.wav');
 
     // Music Track
     // this.game.load.audio('music','soundtrack.mp3');

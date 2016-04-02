@@ -35,19 +35,32 @@ Game.Play.prototype = {
 	create: function() {
 		this.game.world.setBounds(0, 0 ,Game.w ,Game.h);
 		this.game.stage.backgroundColor = '#000';
+
+    this.space = this.game.add.tileSprite(0,0,1600,1200,'background');
+
 		this.stage.disableVisibilityChange = true;
+
+    this.pShotSnd = this.game.add.sound('shot');
+    this.pShotSnd.volume = 0.2;
+
+    this.explosionSnd = this.game.add.sound('explosion');
+
+    this.oscSnd = this.game.add.sound('oscillation');
+    this.oscSnd.volume = 0.2;
+    this.oscSnd.loop = true;
+    this.oscSnd.play();
+
+
 
     this.deathTimer = this.game.time.now;
 
-		posUpdateTimer = this.game.time.now;
-
-    for (var i = 0;i < 100;i++) {
-      var bright = ['#FFF','#dcdcdc','#efefef','#ffff00','#00ff00'];
-      var sizes = [1,1,1,1,1,2,2,2,3,3,3,4,4,5,6,7,8];
-      var starSize = sizes[rand(0,16)];
-
-      this.game.add.sprite(rand(0,Game.w),rand(0,Game.h),this.makeBox(starSize, starSize, bright[rand(0,2)]));
-    }
+    // for (var i = 0;i < 100;i++) {
+    //   var bright = ['#FFF','#dcdcdc','#efefef','#ffff00','#00ff00'];
+    //   var sizes = [1,1,1,1,1,2,2,2,3,3,3,4,4,5,6,7,8];
+    //   var starSize = sizes[rand(0,16)];
+    //
+    //   this.game.add.sprite(rand(0,Game.w),rand(0,Game.h),this.makeBox(starSize, starSize, bright[rand(0,2)]));
+    // }
 
 
     this.fireRef = new Firebase('https://week12.firebaseio.com/');
@@ -62,8 +75,23 @@ Game.Play.prototype = {
     enemyBullets.setAll('anchor.y', 0.5);
     enemyBullets.setAll('outOfBoundsKill', true);
     enemyBullets.setAll('checkWorldBounds', true);
-    // enemyBullets.setAll('tint', '0x00ff00');
 		enemyBullets.setAll('lifespan', 2000);
+
+
+    var particle = this.game.add.bitmapData(4, 4);
+    particle.ctx.beginPath();
+    particle.ctx.rect(0, 0, 4, 4);
+    particle.ctx.fillStyle = '#ffff00';
+    particle.ctx.fill();
+
+
+    this.emitter = game.add.emitter(0, 0, 200);
+    // this.emitter.makeParticles('pixel');
+    this.emitter.makeParticles(particle);
+    this.emitter.gravity = 0;
+    this.emitter.minParticleSpeed.setTo(-200, -200);
+    this.emitter.maxParticleSpeed.setTo(200, 200);
+
 
 
 
@@ -151,6 +179,7 @@ Game.Play.prototype = {
 					{
 						// this.shoot_s.play();
 						// this.shootSnd.play();
+            that.pShotSnd.play(); 
 						this.nextFire = this.game.time.now + this.fireRate;
 						var bullet = this.bullets.getFirstExists(false);
 						bullet.lifespan = 2000;
@@ -158,7 +187,7 @@ Game.Play.prototype = {
 						// bullet.rotation = this.game.physics.arcade.moveToPointer(bullet, 2000);
 						bullet.rotation = this.rotation;
 						
-						game.physics.arcade.velocityFromRotation(this.rotation, 400, bullet.body.velocity);
+						game.physics.arcade.velocityFromRotation(this.rotation, 500, bullet.body.velocity);
 						that.fireRef.set({bullet: {x: this.x, y: this.y, rotation: bullet.rotation, uid: this.uid, time: this.game.time.now}});
 					}
 			}
@@ -176,12 +205,19 @@ Game.Play.prototype = {
     // position[this.uid] = {angle: this.angle, x: this.x, y: this.y, uid: this.uid, health: this.health};
 
     if (this.health <= 0) {
+      that.explosionSnd.play();
+
+      that.emitter.x = this.x;
+      that.emitter.y = this.y;
+      that.emitter.start(true, 1000, null, 128);
+
       this.kill();
     }
     that.fireRef.set(playr);
   };
 
   actors[player.uid] = player;
+  var that = this;
 
 	// this.fireRef.on('child_changed', function(snapshot) {
 	this.fireRef.child('player').on('value', function(snapshot) {
@@ -203,6 +239,10 @@ Game.Play.prototype = {
           actors[uid].health = actor.health;
 
           if (actors[uid].health <= 0) {
+            that.emitter.x = actors[uid].x;
+            that.emitter.y = actors[uid].y;
+            that.emitter.start(true, 1000, null, 128);
+
             actors[uid].kill();
           }
 
@@ -223,7 +263,7 @@ Game.Play.prototype = {
 			var bullet = enemyBullets.getFirstDead();
 			bullet.reset(shot.x, shot.y); 
 			bullet.rotation = shot.rotation;
-			this.game.physics.arcade.velocityFromRotation(bullet.rotation, 400, bullet.body.velocity);
+			this.game.physics.arcade.velocityFromRotation(bullet.rotation, 500, bullet.body.velocity);
 		}
 	}, function (errorObject) {
 		console.log("The read failed: " + errorObject.code);
